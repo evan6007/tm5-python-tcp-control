@@ -1,0 +1,4 @@
+# Verified camera runtime on Windows / Python 3.9.13.
+grpcio==1.80.0
+protobuf==6.33.6
+Pillow==11.3.0

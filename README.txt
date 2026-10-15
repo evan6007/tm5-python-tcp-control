@@ -1,66 +1,46 @@
-TECHMAN TM5 - LIVE RELATIVE JOINT CONTROL
+TM5 PYTHON CONTROL & CAMERA
+==========================
+Repository: https://github.com/evan6007/tm5-python-tcp-control
+Full installation, controller setup, limitations and troubleshooting: README.md
 
-Run: python control.py
-No ROS, no pip packages. Python standard library and TCP sockets only.
+INSTALL (Windows)
+1. Install Python with Tcl/Tk support. Verified: Python 3.9.13.
+2. Clone or download this repository.
+3. Open a terminal in this folder and run:
+   python setup_camera.py
+The installer uses a local .venv-camera; it does not change your base environment.
+Joint control alone needs no pip packages. No ROS is required.
 
-OPERATION
-1. The program reads and displays LIVE J1-J6 angles in degrees.
-2. Select ONE joint: 1 through 6. Enter alone exits.
-3. Enter a RELATIVE change in degrees. Pressing Enter SENDS the move after state checks.
-4. The program reads the angles again and displays current -> target automatically.
-5. No MOVE confirmation. Use Ctrl+C BEFORE submitting the delta to cancel.
+RUN
+python control.py       Select joint 1-6, then enter +/- degrees.
+python camera.py        Save one image to camera_captures/.
+python camera_live.py   Continuous preview. Q / Esc / close window to exit.
 
-Example: select 6, enter +1. This means J6 current angle PLUS 1 degree.
-You do not enter six absolute angles. Other joints use live readback values.
-There is no automatic return or repeated movement.
-If the robot moves during preflight, the program refuses the command.
-Positive rotation is about the joint axis, not necessarily clockwise as viewed.
+ROBOT SETUP
+Default robot IP: 192.168.1.101. Example laptop IP: 192.168.1.100/24.
+Motion: configure Ethernet Slave binary feedback and run Start -> Listen1.
+Camera: stop the project, then Configuration > Vision Settings > Services >
+EIH Camera API > Enabled. Camera uses gRPC port 15567, independently of Listen.
+See README.md for the exact feedback fields and IP settings.
 
-CONTROLLER SETUP
-Robot: 192.168.1.101. Laptop Ethernet: 192.168.1.100 / 255.255.255.0.
-Enable Ethernet Slave, Binary table: Robot_Link, Robot_Error, Joint_Angle.
-Coord_Robot_Flange can remain selected. Write Permission is not required.
-Run PC_Control: Start -> Listen1. Keep M mode and 5% project speed.
-PC-side TMflow is unnecessary; controller-side TMflow must run Listen1.
+MOTION
+A signed value changes the selected joint relative to LIVE readback.
+Pressing Enter after the value sends one move; there is no second confirmation.
+Speed: SPEED_PERCENT in tm_tcp.py (current default 3).
+There is no application angular-step cap. Controller safety limits still apply.
+Closing Python or disconnecting the network does NOT stop issued motion.
+Use Robot Stick STOP for normal stopping; E-stop in an emergency.
 
-FILES
-control.py: short interactive entry point.
-tm_tcp.py: TCP framing, state parsing, one-shot relative joint control.
-test_offline.py: run python -m unittest -v test_offline (no robot connection).
-ready.cmd: this laptop only; Enter starts the Anaconda Python executable.
-On another computer, use python control.py instead of ready.cmd.
+CAMERA
+Preview repeatedly retrieves PNG images; it is not an RTSP video stream.
+Measured sequential acquisition was about 4.9 FPS in this setup.
+Snapshots stay local; preview does not save photos or move the robot.
+If imports fail, rerun python setup_camera.py.
 
-PROTOCOL
-5891 / TMSVR: live state readback.
-5890 / TMSTA: Listen state query.
-5890 / TMSCT: TMscript PTP joint-angle motion.
-Relative changes are converted internally to absolute joint targets.
-No ROS, Modbus, EtherNet/IP or cloud service is used.
-
-LIMITS
-One joint at a time. No custom step-size cap; controller joint/safety limits still apply.
-PTP command speed 3%, acceleration time 1000 ms, blending 0.
-No automatic retry. Arrival requires 3 readings within 0.03 degree per joint, with a 300-second observation timeout.
-These checks are NOT collision protection or a certified safety system.
-Mounting, clearance, tools/loads and M/A mode must be checked on site.
-Other joints sweep more space than J6. The current setup has no gripper.
-Closing Python, Ctrl+C or Ethernet disconnection does NOT stop issued motion.
-Use Robot Stick STOP to stop normally; use E-stop in an emergency.
-On timeout/error, stop the project and inspect before any retry.
-
-VERIFICATION
-TM5-900 / controller HW 3.2B / TMflow 2.26.3800.NA.
-Earlier session: physical readback, Listen query, arithmetic and J6 +1 verified.
-This relative-control revision was tested OFFLINE, with no new physical motion.
-
-REFERENCES
-https://github.com/TechmanRobotInc/tm2_ros2/blob/humble/doc/tm_humble.md
-https://www.tm-robot.com/en/support/developer-area
-
-中文快速提示
-先自動讀取目前角度，再選一軸，例如 6，再填 +1，代表 J6 從現在加 1 度。
-每次只改一軸，移除程式自訂角度增量限制；控制箱原有安全限制不變。
-輸入角度增量後按 Enter 就送出，不再輸入 MOVE。送出前按 Ctrl+C 可取消。
-關閉程式不會停止手臂；停止用操作棒，有危險按急停。
-
-
+中文快速入門
+第一次：python setup_camera.py
+即時影像：python camera_live.py，Q / Esc 關閉。
+拍照：python camera.py，存到 camera_captures。
+控制：python control.py，輸入軸 1~6，再輸入 +/- 角度，Enter 就送出。
+速度在 tm_tcp.py 的 SPEED_PERCENT。結束 Python 不等於停止手臂。
+完整英文說明、故障排除與實測紀錄請看 README.md。
